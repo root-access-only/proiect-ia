@@ -1,18 +1,23 @@
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+
 sns.set_theme(style='white')
 iris = sns.load_dataset('iris')
+
 # Eliminăm coloana categorică 'species' — corelația Pearson se calculează
 # doar pe variabile numerice
 iris_numeric = iris.drop(columns='species')
+
 # Calculăm matricea de corelație Pearson
 corelatie = iris_numeric.corr(method='pearson')
 print("=== Matricea de corelație Pearson ===")
 print(corelatie.round(3))
+
 # Mascăm triunghiul superior pentru a evita duplicarea informației
 # (matricea de corelație este simetrică: corr(A, B) == corr(B, A))
 mask = np.triu(np.ones(corelatie.shape, dtype=bool), k=1)
+
 fig, ax = plt.subplots(figsize=(8, 6))
 sns.heatmap(corelatie,
 mask=mask, # afișăm doar triunghiul inferior + diagonala
@@ -29,6 +34,7 @@ fontsize=13)
 plt.tight_layout()
 plt.savefig('heatmap_corelatie_iris.png', dpi=150, bbox_inches='tight')
 plt.show()
+
 # Identificăm automat corelațiile puternice
 print("\n=== Interpretare automată ===")
 prag_puternic = 0.8
