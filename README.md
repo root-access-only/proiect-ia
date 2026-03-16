@@ -1,6 +1,6 @@
 # Proiect IA
 
-Repository pentru laboratoarele de Inteligenta Artificiala.
+Repository pentru proiectul de Inteligenta Artificiala.
 
 ## Laboratoare
 
