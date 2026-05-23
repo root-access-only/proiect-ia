@@ -25,3 +25,6 @@ Desktop.ini
 
 # Output files
 *.png
+
+# Exception: keep traffic-sign textures (needed for portable scene)
+!pioneer-vision-tsp-nlp/data/signs/*.png
