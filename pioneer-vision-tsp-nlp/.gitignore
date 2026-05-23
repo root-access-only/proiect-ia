@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+pip-log.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Project-specific
+output/*.png
+output/*.json
+output/*.txt
+!output/.gitkeep
+
+# CoppeliaSim
+*.ttt~
+*.ttt.bak
+coppeliaSim_*.log
+
+# Data dumps (regenerable)
+data/nlp/*.csv
+
+# Large model artifacts
+*.pkl
+*.joblib
+*.h5
