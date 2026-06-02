@@ -84,13 +84,18 @@ class TSPTab(ttk.Frame):
         ttk.Label(params, text="SA iter:").grid(row=3, column=0, sticky="w")
         ttk.Entry(params, textvariable=self.sa_iter_var, width=8).grid(row=3, column=1, sticky="w")
 
+        self.sa_schedule_var = tk.StringVar(value="geometric")
+        ttk.Label(params, text="SA racire:").grid(row=4, column=0, sticky="w")
+        ttk.Combobox(params, textvariable=self.sa_schedule_var, width=10,
+                     values=["geometric", "linear", "logarithmic"], state="readonly").grid(row=4, column=1, sticky="w")
+
         self.ga_pop_var = tk.IntVar(value=120)
-        ttk.Label(params, text="GA pop:").grid(row=4, column=0, sticky="w")
-        ttk.Entry(params, textvariable=self.ga_pop_var, width=8).grid(row=4, column=1, sticky="w")
+        ttk.Label(params, text="GA pop:").grid(row=5, column=0, sticky="w")
+        ttk.Entry(params, textvariable=self.ga_pop_var, width=8).grid(row=5, column=1, sticky="w")
 
         self.ga_gen_var = tk.IntVar(value=300)
-        ttk.Label(params, text="GA gen:").grid(row=5, column=0, sticky="w")
-        ttk.Entry(params, textvariable=self.ga_gen_var, width=8).grid(row=5, column=1, sticky="w")
+        ttk.Label(params, text="GA gen:").grid(row=6, column=0, sticky="w")
+        ttk.Entry(params, textvariable=self.ga_gen_var, width=8).grid(row=6, column=1, sticky="w")
 
         # Actions
         act = ttk.LabelFrame(left, text="Actiuni", padding=8)
@@ -125,6 +130,8 @@ class TSPTab(ttk.Frame):
         ttk.Button(picker, text="Convergenta", command=lambda: self._show_image("convergence.png")).pack(side="left", padx=4)
         ttk.Button(picker, text="Cost vs timp", command=lambda: self._show_image("cost_time.png")).pack(side="left", padx=4)
         ttk.Button(picker, text="Scalabilitate", command=lambda: self._show_image("scalability.png")).pack(side="left", padx=4)
+        ttk.Button(picker, text="SA raciri", command=self.run_sa_compare).pack(side="left", padx=4)
+        ttk.Button(picker, text="GA convergenta", command=self.run_ga_convergence).pack(side="left", padx=4)
 
     # ------------------------------------------------------------------
     def gen_matrix(self) -> None:
@@ -187,6 +194,82 @@ class TSPTab(ttk.Frame):
                 self.after(0, lambda: self._show_image("scalability.png"))
             except Exception as exc:
                 self.after(0, lambda e=exc: messagebox.showerror("TSP", str(e)))
+        threading.Thread(target=worker, daemon=True).start()
+
+    def run_sa_compare(self) -> None:
+        if self.matrix is None:
+            self.gen_matrix()
+
+        def worker():
+            try:
+                from src.tsp.sa import solve_sa
+
+                iters = int(self.sa_iter_var.get()) * 4
+                seed = int(self.seed_var.get())
+                schedule1 = self.sa_schedule_var.get()
+                other = [s for s in ["geometric", "linear", "logarithmic"] if s != schedule1]
+                schedule2 = other[0]
+
+                configs = [
+                    (schedule1, {"schedule": schedule1, "alpha": 0.99, "delta": 0.5}, "#d62728"),
+                    (schedule2, {"schedule": schedule2, "alpha": 0.99, "delta": 0.5}, "#1f77b4"),
+                ]
+
+                fig, ax = plt.subplots(figsize=(10, 6))
+                for label, sparams, color in configs:
+                    res = solve_sa(self.matrix, T_max=2000.0, T_min=1e-4,
+                                   iterations=iters, seed=seed, init="random", **sparams)
+                    xs = [p[0] for p in res.history]
+                    ys = [p[1] for p in res.history]
+                    ax.step(xs, ys, where="post", color=color, lw=2,
+                            label=f"Racire {label}  (cost final = {res.cost:.1f})")
+
+                ax.set_xlabel("Iteratie")
+                ax.set_ylabel("Cel mai bun cost curent")
+                ax.set_title("Convergenta SA — cost vs. iteratii pentru doua scheme de racire")
+                ax.grid(True, alpha=0.3)
+                ax.legend()
+                fig.tight_layout()
+                fig.savefig(str(OUTPUT / "sa_convergence.png"), dpi=130)
+                plt.close(fig)
+                self.after(0, lambda: self._show_image("sa_convergence.png"))
+            except Exception as exc:
+                self.after(0, lambda e=exc: messagebox.showerror("TSP", str(e)))
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def run_ga_convergence(self) -> None:
+        if self.matrix is None:
+            self.gen_matrix()
+
+        def worker():
+            try:
+                from src.tsp.ga import solve_ga
+
+                gens = int(self.ga_gen_var.get())
+                pop = int(self.ga_pop_var.get())
+                seed = int(self.seed_var.get())
+
+                res = solve_ga(self.matrix, population_size=pop, generations=gens, seed=seed)
+                xs = [p[0] for p in res.history]
+                ys = [p[1] for p in res.history]
+
+                fig, ax = plt.subplots(figsize=(10, 6))
+                ax.plot(xs, ys, color="#9467bd", lw=2,
+                        label=f"GA  (cost final = {res.cost:.1f})")
+                ax.fill_between(xs, ys, alpha=0.1, color="#9467bd")
+                ax.set_xlabel("Generatie")
+                ax.set_ylabel("Cel mai bun cost curent")
+                ax.set_title(f"Convergenta GA pe parcursul a {gens} de generatii")
+                ax.grid(True, alpha=0.3)
+                ax.legend()
+                fig.tight_layout()
+                fig.savefig(str(OUTPUT / "ga_convergence.png"), dpi=130)
+                plt.close(fig)
+                self.after(0, lambda: self._show_image("ga_convergence.png"))
+            except Exception as exc:
+                self.after(0, lambda e=exc: messagebox.showerror("TSP", str(e)))
+
         threading.Thread(target=worker, daemon=True).start()
 
     def save_report(self) -> None:
